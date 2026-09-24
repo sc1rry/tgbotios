@@ -818,11 +818,10 @@ $$(".seg,.nav-item")
 
   });
 
-$("#refreshBtn")
-  .addEventListener(
-    "click",
-    loadData
-  );
+const refreshBtn = $("#refreshBtn");
+
+if (refreshBtn) {
+  refreshBtn.addEventListener("click", loadData);
 
 if (
   "serviceWorker" in navigator
