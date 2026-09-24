@@ -1,11 +1,111 @@
-<!doctype html>
-<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ONTU"><title>ONTU Schedule</title><link rel="manifest" href="./manifest.json"><link rel="apple-touch-icon" href="./icons/icon-180.png"><link rel="stylesheet" href="./style.css"></head>
-<body><main class="app"><header><div><div class="eyebrow">ЕМ-281[а] · ННІЕУіБ</div><h1 id="title">Сьогодні</h1></div><button id="refresh" class="round" aria-label="Оновити">↻</button></header>
-<section class="hero"><div class="kicker">наступна пара</div><div class="heroRow"><div><div id="nextSubject" class="nextSubject">Завантаження…</div><div id="nextMeta" class="muted">оновлюю розклад</div></div><div id="nextTime" class="nextTime">—</div></div><div class="easter">everything in its right place</div></section>
-<section id="weather" class="weather hidden"><div><b id="temp">—</b><span id="weatherText">Погода</span></div><span id="weatherExtra" class="muted"></span></section>
-<div class="seg"><button class="active" data-view="today">Сьогодні</button><button data-view="tomorrow">Завтра</button><button data-view="week">Тиждень</button></div>
-<section id="content"></section>
-<section class="status"><span class="dot"></span><div><b>Дані синхронізовано</b><div id="updated" class="muted">—</div></div></section>
-<footer><span>for Міша · 281[a]</span><span>no alarms, no surprises</span></footer></main>
-<nav><button class="active" data-view="today"><span>◷</span>Сьогодні</button><button data-view="tomorrow"><span>→</span>Завтра</button><button data-view="week"><span>▦</span>Тиждень</button></nav>
-<script src="./app.js?v=5" defer></script></body></html>
+from pathlib import Path
+
+html = r'''<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ONTU" />
+
+  <title>ONTU Schedule</title>
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+  <link rel="icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">ЕМ-281[а] · ННІЕУіБ</div>
+        <h1 id="screenTitle">Сьогодні</h1>
+      </div>
+
+      <button id="refreshBtn" class="icon-btn" aria-label="Оновити">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"/>
+        </svg>
+      </button>
+    </header>
+
+    <section id="heroCard" class="hero-card">
+      <div class="hero-kicker">наступна пара</div>
+
+      <div class="hero-main">
+        <div>
+          <div id="nextSubject" class="hero-subject">Завантаження…</div>
+          <div id="nextMeta" class="hero-meta">оновлюю розклад</div>
+        </div>
+
+        <div id="nextTime" class="hero-time">—</div>
+      </div>
+
+      <div class="hero-quote">everything in its right place</div>
+    </section>
+
+    <section class="segmented" role="tablist" aria-label="Період">
+      <button class="seg active" data-view="today">Сьогодні</button>
+      <button class="seg" data-view="tomorrow">Завтра</button>
+      <button class="seg" data-view="week">Тиждень</button>
+    </section>
+
+    <section id="content" class="content" aria-live="polite"></section>
+
+    <section class="status-card">
+      <div class="status-dot"></div>
+
+      <div>
+        <div class="status-title">Дані синхронізовано</div>
+        <div id="updatedAt" class="status-subtitle">—</div>
+      </div>
+    </section>
+
+    <footer>
+      <span>for Міша · 281[a]</span>
+      <span class="footer-note">no alarms, no surprises</span>
+    </footer>
+  </main>
+
+  <nav class="bottom-nav" aria-label="Навігація">
+    <button class="nav-item active" data-view="today">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="3"/>
+        <path d="M8 3v4M16 3v4M3 10h18"/>
+      </svg>
+      <span>Сьогодні</span>
+    </button>
+
+    <button class="nav-item" data-view="tomorrow">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+      <span>Завтра</span>
+    </button>
+
+    <button class="nav-item" data-view="week">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 7h16M7 3v4M17 3v4"/>
+        <rect x="3" y="5" width="18" height="16" rx="3"/>
+        <path d="M7 12h2M11 12h2M15 12h2M7 16h2M11 16h2M15 16h2"/>
+      </svg>
+      <span>Тиждень</span>
+    </button>
+  </nav>
+
+  <script src="./app.js?v=6" defer></script>
+</body>
+</html>
+'''
+
+p = Path("/mnt/data/index.html")
+p.write_text(html, encoding="utf-8")
+print(p)
