@@ -1,26 +1,189 @@
-const API_URL="https://tgbot-zvra.onrender.com/api/schedule";
-const TIMES={1:["08:00","09:20"],2:["09:30","10:50"],3:["11:30","12:50"],4:["13:00","14:20"],5:["14:30","15:50"],6:["16:00","17:20"]};
-const DAYS=["Неділя","Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота"];
-const DAYMAP={"понеділок":1,"понедельник":1,"вівторок":2,"вторник":2,"середа":3,"среда":3,"четвер":4,"четверг":4,"пʼятниця":5,"п'ятниця":5,"пятница":5,"субота":6,"суббота":6,"неділя":0,"воскресенье":0};
-const state={raw:null,lessons:[],view:"today"};const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const norm=s=>String(s??"").replace(/\u00a0/g," ").replace(/\s+/g," ").trim();
-function collapse(s){const t=norm(s);return /^(?:[А-ЯІЇЄҐA-Z]\s+){3,}[А-ЯІЇЄҐA-Z]$/i.test(t)?t.replace(/\s+/g,""):t}
-function dayIndex(s=""){const t=collapse(s).toLowerCase().replace(/’/g,"ʼ");for(const[k,v]of Object.entries(DAYMAP))if(t.includes(k))return v;return null}
-function zoom(text=""){const m=String(text).match(/https?:\/\/[^\s<>"']+/i);return m?m[0].replace(/[),.;]+$/,""):null}
-function typeOf(t=""){t=t.toLowerCase();if(t.includes("лаборатор"))return"Лаб";if(t.includes("практи"))return"Практика";if(t.includes("лекц"))return"Лекція";if(t.includes("онлайн")||t.includes("zoom"))return"Онлайн";return"Пара"}
-function teacherOf(t=""){return String(t).split(/[•|\n]/).map(norm).find(x=>/[А-ЯІЇЄҐ][а-яіїєґ]+\s+[А-ЯІЇЄҐ]\.?[А-ЯІЇЄҐ]?\.?/u.test(x)||/(викладач|доцент|професор|асистент)/i.test(x))||null}
-function roomOf(t=""){for(const re of[/(?:ауд\.?|аудиторія|каб\.?|кабінет)\s*[:№]?\s*([A-Za-zА-Яа-яІіЇїЄєҐґ0-9\-\/]+)/i,/\b([А-ЯA-Z]?\d{2,4}[а-яА-ЯA-Za-z]?)\b/]){const m=t.match(re);if(m)return m[1]}return null}
-function subjectOf(text=""){let t=String(text).replace(/https?:\/\/\S+/gi," ").replace(/Запрошення.*$/i," ").replace(/Join Zoom Meeting.*$/i," ").replace(/Ідентифікатор конференції.*$/i," ").replace(/Код доступу.*$/i," ").replace(/Meeting ID.*$/i," ").replace(/Passcode.*$/i," ");t=norm(t).replace(/\b(лекція|лекц\.?|практика|практ\.?|лабораторна|лаб\.?|онлайн)\b/gi," ");const tr=teacherOf(t);if(tr)t=t.replace(tr," ");return norm(t.split(/[•|]/).filter(Boolean)[0]||t)||"Пара"}
-function rowsFrom(raw){const out=[],seen=new Set();function walk(node,inherited=null){if(node==null)return;if(Array.isArray(node)){const ss=node.filter(x=>["string","number"].includes(typeof x)).map(String);let d=inherited;for(const s of ss){const q=dayIndex(s);if(q!=null)d=q}const pair=ss.find(x=>/^[1-6]$/.test(norm(x)));if(pair&&d!=null&&ss.length>=2){const k=d+"|"+ss.join("•");if(!seen.has(k)){seen.add(k);out.push({day:d,strings:ss})}}for(const c of node)walk(c,d);return}if(typeof node==="object"){let d=inherited;for(const[k,v]of Object.entries(node)){const a=dayIndex(k),b=typeof v==="string"?dayIndex(v):null;if(a!=null)d=a;if(b!=null)d=b}const ss=Object.values(node).filter(x=>["string","number"].includes(typeof x)).map(String),pair=ss.find(x=>/^[1-6]$/.test(norm(x)));if(pair&&d!=null&&ss.length>=2){const k=d+"|"+ss.join("•");if(!seen.has(k)){seen.add(k);out.push({day:d,strings:ss})}}for(const v of Object.values(node))walk(v,d)}}walk(raw.sections??raw);return out}
-function parse(raw){const arr=[];for(const r of rowsFrom(raw)){const p=r.strings.find(x=>/^[1-6]$/.test(norm(x)));if(!p)continue;const pair=+p,text=r.strings.filter(x=>x!==p&&dayIndex(x)==null).join(" • ");arr.push({day:r.day,pair,start:TIMES[pair]?.[0]||"",end:TIMES[pair]?.[1]||"",subject:subjectOf(text),type:typeOf(text),teacher:teacherOf(text),room:roomOf(text),zoom:zoom(text)})}const m=new Map;for(const l of arr){const k=`${l.day}-${l.pair}-${l.subject}`;if(!m.has(k))m.set(k,l)}return[...m.values()].sort((a,b)=>a.day-b.day||a.pair-b.pair)}
-function nextLesson(){const now=new Date(),day=now.getDay(),mins=now.getHours()*60+now.getMinutes();for(const l of state.lessons.filter(x=>x.day===day).sort((a,b)=>a.pair-b.pair)){const[sH,sM]=l.start.split(":").map(Number),[eH,eM]=l.end.split(":").map(Number),s=sH*60+sM,e=eH*60+eM;if(mins<=e)return{lesson:l,current:mins>=s&&mins<=e}}for(let add=1;add<=7;add++){const d=(day+add)%7,ls=state.lessons.filter(x=>x.day===d).sort((a,b)=>a.pair-b.pair);if(ls.length)return{lesson:ls[0],current:false}}return null}
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-function card(l,current=false){return`<article class="lesson ${current?"current":""}"><div class="num"><strong>${l.pair}</strong><span>${l.start}<br>${l.end}</span></div><div><div class="top"><div class="subject">${esc(l.subject)}</div><div class="badge">${esc(l.type)}</div></div><div class="meta">${l.teacher?`<span>◉ ${esc(l.teacher)}</span>`:""}${l.room?`<span>⌖ ауд. ${esc(l.room)}</span>`:""}</div>${l.zoom?`<a class="zoom" href="${esc(l.zoom)}" target="_blank" rel="noopener">◻ Відкрити Zoom</a>`:""}</div></article>`}
-function empty(){return`<div class="empty"><b>Пар немає</b>Можна трохи видихнути<small>no alarms, no surprises</small></div>`}
-function dateLabel(mode,day){const d=new Date();if(mode==="tomorrow")d.setDate(d.getDate()+1);else if(mode==="week"){const diff=(day-d.getDay()+7)%7;d.setDate(d.getDate()+diff)}return new Intl.DateTimeFormat("uk-UA",{day:"numeric",month:"short"}).format(d)}
-function render(){const now=new Date(),today=now.getDay(),tomorrow=(today+1)%7;$$('.seg button,nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));$("#title").textContent=state.view==="today"?"Сьогодні":state.view==="tomorrow"?"Завтра":"Тиждень";let html="";if(state.view!=="week"){const d=state.view==="today"?today:tomorrow,ls=state.lessons.filter(l=>l.day===d);html=`<div class="dayHead"><h2>${DAYS[d]}</h2><span>${dateLabel(state.view,d)}</span></div>`;const n=nextLesson();html+=ls.length?ls.map(l=>card(l,state.view==="today"&&n?.current&&n.lesson.day===l.day&&n.lesson.pair===l.pair)).join(""):empty()}else{for(let d=1;d<=6;d++){const ls=state.lessons.filter(l=>l.day===d);if(!ls.length)continue;html+=`<div class="dayHead"><h2>${DAYS[d]}</h2><span>${dateLabel("week",d)}</span></div>`+ls.map(l=>card(l)).join("")}if(!html)html=empty()}$("#content").innerHTML=html}
-function hero(){const n=nextLesson();if(!n){$("#nextSubject").textContent="Пар не знайдено";$("#nextMeta").textContent="перевір оновлення даних";$("#nextTime").textContent="—";return}const l=n.lesson;$("#nextSubject").textContent=l.subject;$("#nextMeta").textContent=n.current?`зараз · ${l.type.toLowerCase()}${l.room?" · ауд. "+l.room:""}`:`${DAYS[l.day].toLowerCase()} · ${l.type.toLowerCase()}${l.room?" · ауд. "+l.room:""}`;$("#nextTime").textContent=l.start}
-function weather(raw){const w=raw?.weather||raw?.current_weather||raw?.current;if(!w)return;const t=w.temperature??w.temperature_2m??w.temp;if(t==null)return;$("#weather").classList.remove("hidden");$("#temp").textContent=Math.round(+t)+"°";$("#weatherText").textContent="Одеса";const wind=w.windspeed??w.wind_speed_10m??w.wind;$("#weatherExtra").textContent=wind!=null?`вітер ${Math.round(+wind)} км/год`:""}
-function updated(raw){const v=raw?.updated_at||raw?.updatedAt||raw?.last_update||raw?.generated_at||raw?.timestamp;if(!v)return"час оновлення не вказаний";const d=new Date(v);return isNaN(d)?`Оновлено ${v}`:"Оновлено "+new Intl.DateTimeFormat("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(d)}
-async function load(){$("#content").innerHTML='<div class="skeleton"></div><div class="skeleton"></div>';try{const c=new AbortController(),timer=setTimeout(()=>c.abort(),90000),r=await fetch(`${API_URL}?t=${Date.now()}`,{cache:"no-store",signal:c.signal});clearTimeout(timer);if(!r.ok)throw new Error("HTTP "+r.status);const raw=await r.json();state.raw=raw;state.lessons=parse(raw);hero();weather(raw);render();$("#updated").textContent=updated(raw);localStorage.setItem("ontu-cache",JSON.stringify(raw))}catch(e){const c=localStorage.getItem("ontu-cache");if(c){const raw=JSON.parse(c);state.raw=raw;state.lessons=parse(raw);hero();weather(raw);render();$("#updated").textContent=updated(raw)+" · кеш"}else $("#content").innerHTML=`<div class="error"><b>Не вдалося отримати розклад</b><br>${e.name==="AbortError"?"Render довго прокидається. Спробуй ще раз через кілька секунд.":esc(e.message)}</div>`}}
-$$('.seg button,nav button').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;render()});$("#refresh").onclick=load;if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js"));load();
+from pathlib import Path
+
+src = Path("/mnt/data/ontu-pwa/app.js")
+text = src.read_text(encoding="utf-8")
+
+start = text.index("function rowsFrom(raw)")
+end = text.index("function nextLesson()", start)
+
+replacement = r'''function rowsFrom(raw){
+  const out=[];
+  const seen=new Set();
+  let currentDay=null;
+
+  function addRow(strings){
+    const ss=strings
+      .filter(x=>["string","number"].includes(typeof x))
+      .map(String);
+
+    // Если строка содержит название дня — запоминаем его для всех следующих строк.
+    for(const s of ss){
+      const d=dayIndex(s);
+      if(d!=null) currentDay=d;
+    }
+
+    const pair=ss.find(x=>/^[1-6]$/.test(norm(x)));
+    if(!pair || currentDay==null) return;
+
+    const useful=ss.filter(x=>dayIndex(x)==null);
+    if(useful.length<2) return;
+
+    const key=currentDay+"|"+useful.map(norm).join("•");
+    if(seen.has(key)) return;
+
+    seen.add(key);
+    out.push({day:currentDay,strings:ss});
+  }
+
+  function walk(node){
+    if(node==null) return;
+
+    if(Array.isArray(node)){
+      // ВАЖНО: элементы массива обрабатываются по порядку.
+      // Поэтому день, найденный в первой строке блока, сохраняется
+      // для 2-й, 3-й и остальных пар этого дня.
+      for(const item of node){
+        if(Array.isArray(item)){
+          addRow(item);
+          walk(item);
+        }else if(item && typeof item==="object"){
+          walk(item);
+        }else if(typeof item==="string"){
+          const d=dayIndex(item);
+          if(d!=null) currentDay=d;
+        }
+      }
+      return;
+    }
+
+    if(typeof node==="object"){
+      // Некоторые варианты JSON могут хранить день в ключе объекта.
+      for(const [k,v] of Object.entries(node)){
+        const dk=dayIndex(k);
+        if(dk!=null) currentDay=dk;
+
+        if(typeof v==="string"){
+          const dv=dayIndex(v);
+          if(dv!=null) currentDay=dv;
+        }
+      }
+
+      addRow(Object.values(node));
+
+      // Сохраняем порядок свойств объекта.
+      for(const v of Object.values(node)){
+        if(Array.isArray(v) || (v && typeof v==="object")){
+          walk(v);
+        }
+      }
+    }
+  }
+
+  walk(raw?.sections ?? raw);
+  return out;
+}
+
+function parse(raw){
+  const arr=[];
+
+  for(const r of rowsFrom(raw)){
+    const pairIndex=r.strings.findIndex(x=>/^[1-6]$/.test(norm(x)));
+    if(pairIndex===-1) continue;
+
+    const pair=Number(norm(r.strings[pairIndex]));
+
+    const text=r.strings
+      .filter((x,i)=>i!==pairIndex && dayIndex(x)==null)
+      .map(norm)
+      .filter(Boolean)
+      .join(" • ");
+
+    if(!text) continue;
+
+    arr.push({
+      day:r.day,
+      pair,
+      start:TIMES[pair]?.[0]||"",
+      end:TIMES[pair]?.[1]||"",
+      subject:subjectOf(text),
+      type:typeOf(text),
+      teacher:teacherOf(text),
+      room:roomOf(text),
+      zoom:zoom(text)
+    });
+  }
+
+  // Убираем только настоящие дубликаты, но не разные занятия
+  // на одной и той же паре.
+  const unique=new Map();
+
+  for(const l of arr){
+    const key=[
+      l.day,
+      l.pair,
+      norm(l.subject),
+      norm(l.teacher),
+      norm(l.room),
+      norm(l.zoom)
+    ].join("|");
+
+    if(!unique.has(key)) unique.set(key,l);
+  }
+
+  return [...unique.values()].sort(
+    (a,b)=>a.day-b.day || a.pair-b.pair || a.subject.localeCompare(b.subject,"uk")
+  );
+}
+'''
+
+fixed = text[:start] + replacement + text[end:]
+
+# Also make subject extraction less likely to collapse to "Пара".
+old_subject_start = fixed.index('function subjectOf(text="")')
+old_subject_end = fixed.index('function rowsFrom(raw)', old_subject_start)
+
+subject_replacement = r'''function subjectOf(text=""){
+  let t=String(text)
+    .replace(/https?:\/\/\S+/gi," ")
+    .replace(/Запрошення.*$/i," ")
+    .replace(/Join Zoom Meeting.*$/i," ")
+    .replace(/Ідентифікатор конференції.*$/i," ")
+    .replace(/Код доступу.*$/i," ")
+    .replace(/Meeting ID.*$/i," ")
+    .replace(/Passcode.*$/i," ");
+
+  const parts=t
+    .split(/[•|\n]/)
+    .map(norm)
+    .filter(Boolean);
+
+  const filtered=parts.filter(part=>{
+    const low=part.toLowerCase();
+
+    if(/^[1-6]$/.test(part)) return false;
+    if(dayIndex(part)!=null) return false;
+
+    if(/^(лекція|лекция|лекц\.?|практика|практ\.?|лабораторна|лабораторная|лаб\.?|онлайн)$/i.test(part))
+      return false;
+
+    if(/^(ауд\.?|аудиторія|аудитория|каб\.?|кабінет)\b/i.test(part))
+      return false;
+
+    if(/^(meeting id|passcode|ідентифікатор конференції|код доступу)\b/i.test(part))
+      return false;
+
+    return true;
+  });
+
+  // На сайті ОНТУ назва дисципліни зазвичай стоїть першою
+  // серед корисних частин рядка.
+  return filtered[0] || parts[0] || "Пара";
+}
+'''
+
+fixed = fixed[:old_subject_start] + subject_replacement + fixed[old_subject_end:]
+
+out = Path("/mnt/data/app.js")
+out.write_text(fixed, encoding="utf-8")
+
+print("Готовый исправленный файл создан:", out)
