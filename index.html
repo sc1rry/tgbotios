@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ONTU">
+  <title>ONTU Schedule</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-180.png">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./style.css?v=clean1">
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div>
+        <div class="eyebrow">ЕМ-281[а] · ННІЕУіБ</div>
+        <h1 id="screenTitle">Сьогодні</h1>
+      </div>
+      <button id="refreshBtn" class="round-btn" type="button" aria-label="Оновити">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v6h-6"/>
+        </svg>
+      </button>
+    </header>
+
+    <section class="hero">
+      <div class="hero-label">наступна пара</div>
+      <div class="hero-row">
+        <div class="hero-copy">
+          <div id="nextSubject" class="hero-subject">Завантаження…</div>
+          <div id="nextMeta" class="hero-meta">оновлюю розклад</div>
+        </div>
+        <div id="nextTime" class="hero-time">—</div>
+      </div>
+      <div class="hero-easter">everything in its right place</div>
+      <div class="hero-orbit" aria-hidden="true"></div>
+    </section>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-view="today" type="button">Сьогодні</button>
+      <button class="tab" data-view="tomorrow" type="button">Завтра</button>
+      <button class="tab" data-view="week" type="button">Тиждень</button>
+    </div>
+
+    <section id="content" class="content" aria-live="polite">
+      <div class="skeleton"></div>
+      <div class="skeleton"></div>
+    </section>
+
+    <section class="sync">
+      <span class="sync-dot"></span>
+      <div>
+        <div class="sync-title">Дані синхронізовано</div>
+        <div id="updatedAt" class="sync-sub">—</div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>for Міша · 281[a]</span>
+      <span>no alarms, no surprises</span>
+    </footer>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-view="today" type="button">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+      <span>Сьогодні</span>
+    </button>
+    <button class="nav-btn" data-view="tomorrow" type="button">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <span>Завтра</span>
+    </button>
+    <button class="nav-btn" data-view="week" type="button">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M7 14h2M11 14h2M15 14h2"/></svg>
+      <span>Тиждень</span>
+    </button>
+  </nav>
+
+  <script src="./app.js?v=clean1" defer></script>
+</body>
+</html>

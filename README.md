@@ -1,10 +1,17 @@
-# ONTU Schedule PWA
+# Чистая версия PWA
 
-1. Создай репозиторий `ontu-pwa`.
-2. Загрузи в корень репозитория `index.html`, `style.css`, `app.js`, `manifest.json`, `service-worker.js` и папку `icons`.
-3. GitHub → Settings → Pages → Deploy from a branch → `main` → `/ (root)` → Save.
-4. Открой выданную ссылку на iPhone через Safari → Поделиться → «На экран Домой».
+Замените содержимое репозитория GitHub Pages этими файлами целиком.
 
-API уже прописан: `https://tgbot-zvra.onrender.com/api/schedule`
+Файлы:
+- index.html
+- style.css
+- app.js
+- manifest.json
+- service-worker.js
+- icons/
 
-Пасхалки в дизайне: `everything in its right place`, `no alarms, no surprises`, `for Міша · 281[a]`.
+После загрузки:
+1. Commit changes.
+2. Подождать GitHub Pages 1–2 минуты.
+3. Открыть сайт с `?clean=1`.
+4. Сделать Ctrl+Shift+R.
