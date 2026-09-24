@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ONTU"><title>ONTU Schedule</title><link rel="manifest" href="./manifest.json"><link rel="apple-touch-icon" href="./icons/icon-180.png"><link rel="stylesheet" href="./style.css"></head>
+<body><main class="app"><header><div><div class="eyebrow">ЕМ-281[а] · ННІЕУіБ</div><h1 id="title">Сьогодні</h1></div><button id="refresh" class="round" aria-label="Оновити">↻</button></header>
+<section class="hero"><div class="kicker">наступна пара</div><div class="heroRow"><div><div id="nextSubject" class="nextSubject">Завантаження…</div><div id="nextMeta" class="muted">оновлюю розклад</div></div><div id="nextTime" class="nextTime">—</div></div><div class="easter">everything in its right place</div></section>
+<section id="weather" class="weather hidden"><div><b id="temp">—</b><span id="weatherText">Погода</span></div><span id="weatherExtra" class="muted"></span></section>
+<div class="seg"><button class="active" data-view="today">Сьогодні</button><button data-view="tomorrow">Завтра</button><button data-view="week">Тиждень</button></div>
+<section id="content"></section>
+<section class="status"><span class="dot"></span><div><b>Дані синхронізовано</b><div id="updated" class="muted">—</div></div></section>
+<footer><span>for Міша · 281[a]</span><span>no alarms, no surprises</span></footer></main>
+<nav><button class="active" data-view="today"><span>◷</span>Сьогодні</button><button data-view="tomorrow"><span>→</span>Завтра</button><button data-view="week"><span>▦</span>Тиждень</button></nav>
+<script src="./app.js" defer></script></body></html>
